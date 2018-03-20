@@ -1,0 +1,60 @@
+---
+title: "Weather Events Analysis"
+author: "Suman Gangopadhyay"
+date: "3/19/2018"
+output: html_document
+keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Processing
+
+### Downloading the data from the Web
+```{r}
+path <- getwd()
+url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+f <- "StormData.csv.bz2"
+if (!file.exists(path)) {dir.create(path)}
+download.file(url, file.path(path, f))
+```
+
+### Loading the downloaded data into the workspace
+### This will take some time
+```{r}
+NOAA <- read.csv("StormData.csv.bz2")
+```
+
+### Applying data transformations
+1. Converting date columns into date format
+```{r}
+NOAA$BGN_DATE <- as.Date(NOAA$BGN_DATE, format = "%m/%d/%Y %H:%M:%S")
+NOAA$END_DATE <- as.Date(NOAA$END_DATE, format = "%m/%d/%Y %H:%M:%S")
+```
+2. Lookout for same Time zones which are in different case (upper/lower/camelcase)
+```{r}
+unique(NOAA$TIME_ZONE)
+```
+3. Replace same TZ which are in different case (upper/lower/camelcase)
+```{r}
+NOAA$TIME_ZONE[NOAA$TIME_ZONE == "CSt"] <- "CST"
+NOAA$TIME_ZONE[NOAA$TIME_ZONE == "ESt"] <- "EST"
+```
+4. Let's see which Time Zones have more data than others
+```{r}
+TZ_Count <- NOAA %>% group_by(TIME_ZONE) %>% summarise(number = n())
+TZ_Count <- TZ_Count[order(TZ_Count$number),]
+```
+5. Looking at the different type of categorical variables
+```{r}
+length(unique(NOAA$STATE__))
+length(unique(NOAA$TIME_ZONE))
+length(unique(NOAA$COUNTY))
+length(unique(NOAA$COUNTYNAME))
+length(unique(NOAA$STATE))
+length(unique(NOAA$EVTYPE))
+length(unique(NOAA$PROPDMGEXP))
+length(unique(NOAA$CROPDMGEXP))
+```
