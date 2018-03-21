@@ -1,9 +1,10 @@
 ---
 title: "Weather Events Analysis"
 author: "Suman Gangopadhyay"
-date: "3/19/2018"
-output: html_document
-keep_md: true
+date: "March 19, 2018"
+output: 
+  html_document:
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -33,9 +34,11 @@ NOAA <- read.csv("StormData.csv.bz2")
 NOAA$BGN_DATE <- as.Date(NOAA$BGN_DATE, format = "%m/%d/%Y %H:%M:%S")
 NOAA$END_DATE <- as.Date(NOAA$END_DATE, format = "%m/%d/%Y %H:%M:%S")
 ```
-2. Lookout for same Time zones which are in different case (upper/lower/camelcase)
+2. Lookout for same column values which are in different case (upper/lower/camelcase)
 ```{r}
 unique(NOAA$TIME_ZONE)
+unique(NOAA$CROPDMGEXP)
+unique(NOAA$PROPDMGEXP)
 ```
 3. Bring the data to uniform cases where they differ in case only (upper/lower/camelcase)
 ```{r}
@@ -45,69 +48,13 @@ NOAA$CROPDMGEXP[NOAA$CROPDMGEXP == "m"] <- "M"
 NOAA$CROPDMGEXP[NOAA$CROPDMGEXP == "k"] <- "K"
 NOAA$PROPDMGEXP[NOAA$PROPDMGEXP == "m"] <- "M"
 ```
-<!-- 4. Looking at the different type of categorical variables and taking the count of each of them -->
-<!-- ```{r, echo=FALSE} -->
-<!-- require(dplyr) -->
-<!-- ``` -->
-<!-- ```{r} -->
-<!-- Count_STATE__ <- NOAA %>% group_by(STATE__) %>% summarise(number = n()) -->
-<!-- Count_STATE__ <- Count_STATE__[order(Count_STATE__$number),] -->
-<!-- Count_STATE__ <- as.data.frame(Count_STATE__) -->
-<!-- dim(Count_STATE__)[1] -->
-
-<!-- Count_TIME_ZONE <- NOAA %>% group_by(TIME_ZONE) %>% summarise(number = n()) -->
-<!-- Count_TIME_ZONE <- Count_TIME_ZONE[order(Count_TIME_ZONE$number),] -->
-<!-- Count_TIME_ZONE <- as.data.frame(Count_TIME_ZONE) -->
-<!-- dim(Count_TIME_ZONE)[1] -->
-
-<!-- Count_COUNTY <- NOAA %>% group_by(COUNTY) %>% summarise(number = n()) -->
-<!-- Count_COUNTY <- Count_COUNTY[order(Count_COUNTY$number),] -->
-<!-- Count_COUNTY <- as.data.frame(Count_COUNTY) -->
-<!-- dim(Count_COUNTY)[1] -->
-
-<!-- Count_COUNTYNAME <- NOAA %>% group_by(COUNTYNAME) %>% summarise(number = n()) -->
-<!-- Count_COUNTYNAME <- Count_COUNTYNAME[order(Count_COUNTYNAME$number),] -->
-<!-- Count_COUNTYNAME <- as.data.frame(Count_COUNTYNAME) -->
-<!-- dim(Count_COUNTYNAME)[1] -->
-
-<!-- Count_STATE <- NOAA %>% group_by(STATE) %>% summarise(number = n()) -->
-<!-- Count_STATE <- Count_STATE[order(Count_STATE$number),] -->
-<!-- Count_STATE <- as.data.frame(Count_STATE) -->
-<!-- dim(Count_STATE)[1] -->
-
-<!-- Count_EVTYPE <- NOAA %>% group_by(EVTYPE) %>% summarise(number = n()) -->
-<!-- Count_EVTYPE <- Count_EVTYPE[order(Count_EVTYPE$number),] -->
-<!-- Count_EVTYPE <- as.data.frame(Count_EVTYPE) -->
-<!-- dim(Count_EVTYPE)[1] -->
-
-<!-- Count_catg_variables <- NOAA %>% group_by(TIME_ZONE,STATE__,STATE,WFO,COUNTY,EVTYPE) %>% summarise(number = n()) -->
-<!-- Count_catg_variables <- Count_catg_variables[order(Count_catg_variables$number),] -->
-<!-- Count_catg_variables <- as.data.frame(Count_catg_variables) -->
-<!-- colnames(Count_catg_variables)[7] <- "Number.Of.Observations" -->
-<!-- colnames(Count_catg_variables)[6] <- "Event.Type" -->
-<!-- # print(tail(Count_catg_variables),row.names = FALSE) -->
-<!-- kable(tail(Count_catg_variables,10)) -->
-<!-- ``` -->
-
-<!-- This shows that under the time zone CST, in the STATE of KS, the WFO ICT reported 707 observations of HAIL event in the COUNTY 173. This is the maximum reported observation at this level -->
-
-<!-- ```{r, echo=FALSE} -->
-<!-- require(lubridate) -->
-<!-- ``` -->
-<!-- 5. Extracting the Year & Month from the Begin Dates to see how the events are spread out over the year/months -->
-<!-- ```{r} -->
-<!-- NOAA$BGN_YEAR <- year(NOAA$BGN_DATE) -->
-<!-- NOAA$BGN_MONTH <- month(NOAA$BGN_DATE,label = TRUE) -->
-<!-- Count_evtype_yr_mnt <- NOAA %>% group_by(EVTYPE,BGN_YEAR,BGN_MONTH) %>% summarise(number = n()) -->
-<!-- Count_evtype_yr_mnt <- Count_evtype_yr_mnt[order(Count_evtype_yr_mnt$number),] -->
-<!-- Count_evtype_yr_mnt <- as.data.frame(Count_evtype_yr_mnt) -->
-<!-- # print(tail(Count_evtype_yr_mnt),row.names = FALSE) -->
-<!-- kable(tail(Count_evtype_yr_mnt,10)) -->
-<!-- ``` -->
-
-<!-- This shows that the event HAIL was the maximum reported (5770 times) in Jun 2008, followed by THUNDERSTORM WIND (5553 times) in the same month/year -->
-
-6. We need the data set where the Crop damage/Property damage has run into billions, millions or hundreds
+4. Extract the Year & Month of the Begin Date variable
+```{r}
+require(lubridate)
+NOAA$BGN_YEAR <- year(NOAA$BGN_DATE)
+NOAA$BGN_MONTH <- month(NOAA$BGN_DATE,label = TRUE)
+```
+5. We need the data set where the Crop damage/Property damage has run into billions, millions or hundreds
 ```{r}
 NOAA_sub <- NOAA[which(NOAA$PROPDMGEXP %in% c("B","M","K") 
                        | NOAA$CROPDMGEXP %in% c("B","M","K")),]
@@ -127,7 +74,7 @@ NOAA_sub$TOTALDMG <- as.numeric(NOAA_sub$PROPDMG + NOAA_sub$CROPDMG)
 NOAA_sub$EVTYPE <- as.character(NOAA_sub$EVTYPE)
 ```
 
-7. Now lets get the total economic damage and fatalities per event type
+7. Now let's get the total economic damage and fatalities per event type
 ```{r}
 total.dmg.per.ev.type <- with(NOAA_sub,tapply(TOTALDMG,EVTYPE,sum,na.rm=T))
 total.dmg.per.ev.type.df <- data.frame(EVTYPE = names(total.dmg.per.ev.type), 
@@ -137,19 +84,41 @@ total.dmg.per.ev.type.df <- total.dmg.per.ev.type.df[order(total.dmg.per.ev.type
 total.fatal.per.ev.type <- with(NOAA, tapply(FATALITIES,EVTYPE,sum,na.rm=T))
 total.fatal.per.ev.type.df <- data.frame(EVTYPE = names(total.fatal.per.ev.type), TOTALFTL = total.fatal.per.ev.type)
 total.fatal.per.ev.type.df <- total.fatal.per.ev.type.df[order(total.fatal.per.ev.type.df$TOTALFTL),]
-# with(tail(total.dmg.per.ev.type.df,10),barplot(TOTALDMG,names.arg = EVTYPE,cex.names = 0.5))
 ```
-# Top 5 event types in terms of greatest economic consequences
+
+# Results
+## Top 10 event types in terms of greatest economic consequences
 ```{r}
 require(scales)
 require(ggplot2)
-#ggplot(tail(total.dmg.per.ev.type.df,5),aes(x=EVTYPE,y=TOTALDMG)) + geom_bar(stat = "identity") + scale_y_continuous(labels = dollar)
-ggplot(tail(total.dmg.per.ev.type.df,5),aes(x=EVTYPE,y=TOTALDMG)) + geom_bar(stat = "identity") + scale_y_continuous(labels = dollar) + ggtitle("Top 5 Events of greatest Economic Consequence") + scale_size_area() + xlab("Event Types") + ylab("Damage in dollars") + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-# Top 5 event types which are most harmful with respect to population health
-```{r}
-#ggplot(tail(total.fatal.per.ev.type.df,5),aes(x=EVTYPE,y=TOTALFTL)) + geom_bar(stat = "identity")
-ggplot(tail(total.fatal.per.ev.type.df,5),aes(x=EVTYPE,y=TOTALFTL)) + geom_bar(stat = "identity") + ggtitle("Top 5 Events harmful to public health") + xlab("Event Types") + ylab("Number of fatalities") + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(tail(total.dmg.per.ev.type.df,10),aes(x=EVTYPE,y=TOTALDMG, fill = EVTYPE, label = dollar(TOTALDMG))) + geom_col() + geom_text(size = 3, nudge_y = 1) + scale_y_continuous(labels = dollar) + ggtitle("Top 10 Events of greatest Economic Consequence") + scale_size_area() + xlab("Event Types") + ylab("Damage in dollars") + theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position="none")
+
 ```
 
-The above plot shows 
+## Top 10 event types which are most harmful with respect to population health
+```{r}
+ggplot(tail(total.fatal.per.ev.type.df,10),aes(x=EVTYPE,y=TOTALFTL, fill = EVTYPE, label = TOTALFTL)) + geom_col() + geom_text(size = 3, nudge_y = 1) + ggtitle("Top 10 Events harmful to public health") + xlab("Event Types") + ylab("Number of fatalities") + theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position="none")
+```
+
+### Let's concentrate on the 3 events which are of maximum economic consequence as well as result in maximum fatalities (i.e. which appear in both the above top 10 lists)
+
+1. First gather the total number of occurences of all event types per month across all years
+```{r}
+require(dplyr)
+total.evtype.per.mon <- NOAA %>% group_by(EVTYPE,BGN_MONTH) %>% summarise(number = n())
+total.evtype.per.mon <- total.evtype.per.mon[order(total.evtype.per.mon$number),]
+total.evtype.per.mon <- as.data.frame(total.evtype.per.mon)
+```
+
+2. Filter out the data for the 3 events which are of maximum economic consequence as well as result in maximum fatalities (i.e. which appear in both the above top 10 lists)
+```{r}
+top.three.evnts <- total.evtype.per.mon[total.evtype.per.mon$EVTYPE %in% c("FLOOD","FLASH FLOOD","TORNADO"),]
+top.three.evnts$EVTYPE <- as.character(top.three.evnts$EVTYPE)
+top.three.evnts$EVTYPE <- as.factor(top.three.evnts$EVTYPE)
+```
+
+## Distribution of the above top 3 event types over all months 
+```{r}
+ggplot(top.three.evnts, aes(EVTYPE,number,fill = EVTYPE)) + geom_bar(stat = "identity") + facet_grid(.~BGN_MONTH) + theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position="top") + ggtitle("Occurences of top 3 events per month across all years") + xlab("Event Types") + ylab("Number of occurences per month") + scale_fill_discrete(name = "Event Type")
+```
